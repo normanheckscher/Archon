@@ -1,19 +1,42 @@
-FROM python:3.12-slim
+# Start with a stable, well-supported base image: Ubuntu 22.04 LTS
+FROM ubuntu:22.04
+
+# Set environment variables to prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Python 3.12, pip, and other necessary tools
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3-pip \
+    build-essential \
+    sed \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends build-essential sed && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements files
 COPY python/requirements.server.txt ./
 COPY python/requirements.mcp.txt ./
 COPY python/requirements.agents.txt ./
-RUN pip install --no-cache-dir -r requirements.server.txt -r requirements.mcp.txt -r requirements.agents.txt
 
-# First, copy the source code into the image
+# Install Python dependencies using pip3
+RUN pip3 install --no-cache-dir -r requirements.server.txt -r requirements.mcp.txt -r requirements.agents.txt
+
+# Copy the application source code
 COPY ./python/src ./src
 
-# Now, modify the file that has been copied
+# Apply the sed patch
 RUN sed -i '/validate_supabase_url(supabase_url)/s/^/# /' src/server/config/config.py
 
-RUN apt-get update && playwright install-deps
+# Install Playwright browser dependencies (this will now work on Ubuntu 22.04)
+RUN playwright install-deps
 RUN playwright install
+
+# Set environment variable and expose port
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
+
+# Define the command to run the application
 CMD ["uvicorn", "src.server.main:app", "--host", "0.0.0.0", "--port", "8000"]
