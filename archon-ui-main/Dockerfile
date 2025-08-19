@@ -18,6 +18,9 @@ RUN mkdir -p /app/coverage && chmod 777 /app/coverage
 # Copy source code
 COPY . .
 
+# Automatically correct the API URL environment variable in the source code
+RUN sed -i 's/import.meta.env.ARCHON_SERVER_PORT/import.meta.env.VITE_API_URL/g' src/config/api.ts
+
 # Expose Vite's default port
 EXPOSE 5173
 

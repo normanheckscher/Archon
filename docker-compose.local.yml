@@ -38,7 +38,7 @@ services:
       dockerfile: Dockerfile.postgres
     container_name: supabase-db
     volumes:
-      - /mnt/60tb/archon-os_data/database:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_PATH}:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     restart: always

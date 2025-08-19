@@ -1,0 +1,40 @@
+name: Test Upstream Merge into Deploy
+on:
+  workflow_run:
+    workflows: ["Sync Fork from Upstream"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  test-merge-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+
+      - name: Switch to deploy branch
+        run: git checkout deploy
+
+      - name: Attempt to merge main into deploy
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git merge --no-ff origin/main -m "Test merge from main"
+        # This step will fail if there are merge conflicts, notifying you.
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Attempt to build local images
+        run: |
+          # Create a dummy .env file for the build command to succeed
+          echo "POSTGRES_PASSWORD=dummy" > .env
+          docker compose -f docker-compose.local.yml build
+        # This step will fail if upstream changes break your Dockerfiles, notifying you.
+
+      - name: Notify of Success (Optional)
+        if: success()
+        run: echo "Successfully merged and built. Ready for manual review and push."
