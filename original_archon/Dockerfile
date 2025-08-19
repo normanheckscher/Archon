@@ -4,11 +4,14 @@ FROM ubuntu:22.04
 # Set environment variables to prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies for adding PPAs, then add the deadsnakes PPA for newer Python versions,
+# Install dependencies for adding PPAs (including gnupg for key management),
+# then add the deadsnakes PPA for newer Python versions,
 # then install Python 3.12, pip, and other necessary tools in a single layer.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common \
+    gnupg \
+    && add-apt-repository ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     python3.12 \
@@ -34,7 +37,7 @@ COPY ./python/src ./src
 # Apply the sed patch
 RUN sed -i '/validate_supabase_url(supabase_url)/s/^/# /' src/server/config/config.py
 
-# Install Playwright browser dependencies (this will now work on Ubuntu 22.04)
+# Install Playwright browser dependencies
 RUN playwright install-deps
 RUN playwright install
 
