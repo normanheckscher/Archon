@@ -123,7 +123,7 @@ def load_environment_config() -> EnvironmentConfig:
     # Validate required fields
     if openai_api_key:
         validate_openai_api_key(openai_api_key)
-    validate_supabase_url(supabase_url)
+#    validate_supabase_url(supabase_url)
 
     # Validate Supabase key type
     is_valid_key, key_message = validate_supabase_key(supabase_service_key)
