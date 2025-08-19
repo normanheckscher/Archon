@@ -1,0 +1,22 @@
+_format_version: "2.1"
+services:
+  - name: supabase-auth
+    url: http://gotrue:9999
+    routes:
+      - paths: [ "/auth/v1" ]
+        strip_path: true
+  - name: supabase-rest
+    url: http://postgrest:3000
+    routes:
+      - paths: [ "/rest/v1" ]
+        strip_path: true
+  - name: supabase-realtime
+    url: http://realtime:4000
+    routes:
+      - paths: [ "/realtime/v1" ]
+        strip_path: true
+  - name: supabase-storage
+    url: http://storage:5000
+    routes:
+      - paths: [ "/storage/v1" ]
+        strip_path: true
