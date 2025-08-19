@@ -97,17 +97,16 @@ services:
   realtime:
     image: supabase/realtime:v2.25.2
     container_name: supabase-realtime
-    environment:
-      - DB_HOST=db
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - DB_USER=postgres
-      - JWT_SECRET=${JWT_SECRET}
-      - SECRET_KEY_BASE=${JWT_SECRET}
-      - APP_NAME=${APP_NAME}
-    restart: always
     depends_on:
-      db:
-        condition: service_healthy
+      db: { condition: service_healthy }
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: ${POSTG-RES_PASSWORD}
+      DB_USER: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${JWT_SECRET}
+      APP_NAME: ${APP_NAME}
+    restart: always
 
   storage:
     image: supabase/storage-api:v1.2.0
