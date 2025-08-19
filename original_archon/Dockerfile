@@ -4,8 +4,12 @@ FROM ubuntu:22.04
 # Set environment variables to prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python 3.12, pip, and other necessary tools
+# Install dependencies for adding PPAs, then add the deadsnakes PPA for newer Python versions,
+# then install Python 3.12, pip, and other necessary tools in a single layer.
 RUN apt-get update && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     python3.12 \
     python3-pip \
