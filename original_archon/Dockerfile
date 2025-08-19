@@ -12,6 +12,7 @@ COPY ./python/src ./src
 # Now, modify the file that has been copied
 RUN sed -i '/validate_supabase_url(supabase_url)/s/^/# /' src/server/config/config.py
 
+RUN playwright install-deps
 RUN playwright install
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
