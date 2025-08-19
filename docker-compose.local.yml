@@ -103,7 +103,7 @@ services:
       - DB_USER=postgres
       - JWT_SECRET=${JWT_SECRET}
       - SECRET_KEY_BASE=${JWT_SECRET}
-      - APP_NAME=realtime
+      - APP_NAME=${APP_NAME}
     restart: always
     depends_on:
       db:
