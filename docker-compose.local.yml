@@ -1,0 +1,101 @@
+services:
+  archon-server:
+    image: normanjames/archon:backend-latest
+    container_name: archon-server
+    ports: ["${ARCHON_SERVER_PORT:-8181}:8000"]
+    restart: always
+    environment:
+      - SUPABASE_URL=http://kong:8000
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - ARCHON_MCP_PORT=8051
+    depends_on:
+      db: { condition: service_healthy }
+      kong: { condition: service_started }
+  archon-ui:
+    image: normanjames/archon:ui-latest
+    container_name: archon-ui
+    ports: ["${ARCHON_UI_PORT:-3737}:3737"]
+    environment:
+      - VITE_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - VITE_SERVER_URL=${PUBLIC_SERVER_URL}
+      - VITE_API_URL=${PUBLIC_SERVER_URL}
+    restart: unless-stopped
+    depends_on: ["archon-server"] # CORRECTED
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: supabase-db
+    volumes: ["/mnt/60tb/archon-os_data/database:/var/lib/postgresql/data"] # CORRECTED
+    environment: ["POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"] # CORRECTED
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      retries: 5
+  kong:
+    image: kong:3.4
+    container_name: supabase-kong
+    ports: ["${KONG_PORT:-8000}:8000"]
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+      - KONG_PROXY_LISTEN=0.0.0.0:8000
+      - KONG_ADMIN_LISTEN=off
+    volumes: ["./config/kong.yml:/etc/kong/kong.yml"] # CORRECTED
+    restart: unless-stopped
+    depends_on: ["gotrue", "postgrest", "realtime", "storage"] # CORRECTED
+  gotrue:
+    image: supabase/gotrue:v2.126.1
+    container_name: supabase-auth
+    environment:
+      - API_EXTERNAL_URL=${PUBLIC_SUPABASE_URL}
+      - GOTRUE_DB_DRIVER=postgres
+      - GOTRUE_DB_DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      - GOTRUE_JWT_SECRET=${JWT_SECRET}
+      - GOTRUE_SITE_URL=${SITE_URL}
+      - GOTRUE_CORS_ALLOWED_ORIGINS=${SITE_URL}
+    restart: always
+    depends_on:
+      db: { condition: service_healthy }
+  postgrest:
+    image: postgrest/postgrest:v11.2.2
+    container_name: supabase-rest
+    environment:
+      - PGRST_DB_URI=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      - PGRST_DB_SCHEMA=public,storage,graphql_public
+      - PGRST_DB_ANON_ROLE=anon
+      - PGRST_JWT_SECRET=${JWT_SECRET}
+    restart: always
+    depends_on:
+      db: { condition: service_healthy }
+  realtime:
+    image: supabase/realtime:v2.25.2
+    container_name: supabase-realtime
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_USER: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${JWT_SECRET}
+      APP_NAME: ${APP_NAME}
+    restart: always
+  storage:
+    image: supabase/storage-api:v1.2.0
+    container_name: supabase-storage
+    volumes: ["/mnt/60tb/archon-os_data/storage:/storage"] # CORRECTED
+    environment:
+      - DATABASE_URL=postgres://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      - FILE_STORAGE_BACKEND_PATH=/storage
+      - TENANT_ID=stub
+      - JWT_SECRET=${JWT_SECRET}
+      - PGRST_JWT_SECRET=${JWT_SECRET}
+    restart: always
+    depends_on:
+      db: { condition: service_healthy }

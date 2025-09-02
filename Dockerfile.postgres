@@ -1,0 +1,15 @@
+FROM supabase/postgres:15.1.0.118
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg lsb-release\
+    && curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg\
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt-archive.postgresql.org/pub/repos/apt focal-pgdg main" > /etc/apt/sources.list.d/pgdg.list\
+    && apt-get update\
+    && apt-get install -y --no-install-recommends\
+        build-essential\
+        git\
+        postgresql-server-dev-15
+RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git /tmp/pgvector\
+    && cd /tmp/pgvector && make && make install
+RUN apt-get purge -y build-essential git postgresql-server-dev-15 && apt-get autoremove -y\
+    && rm -rf /tmp/pgvector\
+    && rm -rf /var/lib/apt/lists/*
+

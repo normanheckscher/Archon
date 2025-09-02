@@ -8,18 +8,14 @@ RUN apk add --no-cache python3 make g++ git curl
 
 # Copy package files
 COPY package*.json ./
-
-# Install dependencies including dev dependencies for testing
+FROM node:18-alpine
+WORKDIR /app
+RUN apk add --no-cache python3 make g++ git curl
+COPY package*.json ./
 RUN npm ci
-
-# Create coverage directory with proper permissions
 RUN mkdir -p /app/coverage && chmod 777 /app/coverage
-
-# Copy source code
 COPY . .
-
-# Expose the port configured in package.json (3737)
+# Automatically correct the API URL environment variable in the source code
+RUN sed -i 's/import.meta.env.ARCHON_SERVER_PORT/import.meta.env.VITE_API_URL/g' src/config/api.ts
 EXPOSE 3737
-
-# Start Vite dev server (already configured with --port 3737 --host in package.json)
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
